@@ -7,13 +7,13 @@ with open('/mnt/c/Users/rdsal/git_projects/mariadb-repl/hosts','r') as fin:
   n_lines=0
   for line in fin:
     n_lines += 1
-    if n_lines==2:
+    if n_lines==1:
         datas.append(line.strip())
         datas.append('[master2]')
-    elif n_lines==3:
+    elif n_lines==2:
         datas.append(line.strip())
         datas.append('[slave]')
-    elif n_lines==4:
+    elif n_lines==3:
         datas.append(line.strip())
         break
     
