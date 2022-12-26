@@ -3,7 +3,7 @@ import re
 
 global datas
 datas=['[master1]']
-with open('../ansible/playbooks/mysql-rhel9/hosts','r') as fin:
+with open('/mnt/c/Users/rdsal/git_projects/mariadb-repl/hosts','r') as fin:
   n_lines=0
   for line in fin:
     n_lines += 1
@@ -20,7 +20,7 @@ with open('../ansible/playbooks/mysql-rhel9/hosts','r') as fin:
 
 for data in datas:
   #print(data)
-  os.system("echo " + data + " >> ../ansible/playbooks/mysql-rhel9/hosts")
+  os.system("echo " + data + " >> /mnt/c/Users/rdsal/git_projects/mariadb-repl/hosts")
 
 
 with open('/mnt/c/Users/rdsal/git_projects/mariadb-repl/master1_redhat.yaml','r') as f:
