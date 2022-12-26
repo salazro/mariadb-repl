@@ -23,19 +23,19 @@ for data in datas:
   os.system("echo " + data + " >> ../ansible/playbooks/mysql-rhel9/hosts")
 
 
-with open('/mnt/c/Users/rdsal/OneDrive/Desktop/automation/ansible/playbooks/mysql-rhel9/master1_redhat.yaml','r') as f:
+with open('/mnt/c/Users/rdsal/git_projects/mariadb-repl/master1_redhat.yaml','r') as f:
   content = f.read()
   new_content=re.sub('ec2.*com',datas[1],content)
-with open('/mnt/c/Users/rdsal/OneDrive/Desktop/automation/ansible/playbooks/mysql-rhel9/master1_redhat.yaml','w') as fo:
+with open('/mnt/c/Users/rdsal/git_projects/mariadb-repl/master1_redhat.yaml','w') as fo:
   fo.write(new_content)
-with open('/mnt/c/Users/rdsal/OneDrive/Desktop/automation/ansible/playbooks/mysql-rhel9/master2_redhat.yaml','r') as f:
+with open('/mnt/c/Users/rdsal/git_projects/mariadb-repl/master2_redhat.yaml','r') as f:
   content = f.read()
   new_content=re.sub('ec2.*com',datas[3],content)
-with open('/mnt/c/Users/rdsal/OneDrive/Desktop/automation/ansible/playbooks/mysql-rhel9/master2_redhat.yaml','w') as fo:
+with open('/mnt/c/Users/rdsal/git_projects/mariadb-repl/master2_redhat.yaml','w') as fo:
   fo.write(new_content)
 
-with open('/mnt/c/Users/rdsal/OneDrive/Desktop/automation/ansible/playbooks/mysql-rhel9/slave_redhat.yaml','r') as f:
+with open('/mnt/c/Users/rdsal/git_projects/mariadb-repl/slave_redhat.yaml','r') as f:
   content = f.read()
   new_content=re.sub('ec2.*com',datas[5],content)
-with open('/mnt/c/Users/rdsal/OneDrive/Desktop/automation/ansible/playbooks/mysql-rhel9/slave_redhat.yaml','w') as fo:
+with open('/mnt/c/Users/rdsal/git_projects/mariadb-repl/slave_redhat.yaml','w') as fo:
   fo.write(new_content)
