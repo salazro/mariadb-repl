@@ -163,7 +163,7 @@
     - name: Sending Filename Information To Control Node For Later Use in Slave Configuration
       run_once: yes
       fetch: src=/home/ec2-user/binlog_name_master1.txt dest=buffer/ flat=yes
-      when: "inventory_hostname == 'ec2-54-91-112-111.compute-1.amazonaws.com'"
+      when: "inventory_hostname == 'ec2-54-196-81-37.compute-1.amazonaws.com'"
 
     - set_fact:
           bp: "{{binpos.stdout_lines | regex_search('\\\\t\\d+')}}"
@@ -186,7 +186,7 @@
     - name: Sending Position Information To Control Node For Later Use in Slave Configuration
       run_once: yes
       fetch: src=/home/ec2-user/binlog_position_master1.txt dest=buffer/ flat=yes
-      when: "inventory_hostname == 'ec2-54-91-112-111.compute-1.amazonaws.com'"
+      when: "inventory_hostname == 'ec2-54-196-81-37.compute-1.amazonaws.com'"
 
 
     - name: Running "ip addr"
@@ -211,7 +211,7 @@
     - name: Sending Master Node Host IPv4 Address To Control Node For Later Use in Slave Configuration
       run_once: yes
       fetch: src=/home/ec2-user/ipv4_master1.txt dest=buffer/ flat=yes
-      when: "inventory_hostname == 'ec2-54-91-112-111.compute-1.amazonaws.com'"
+      when: "inventory_hostname == 'ec2-54-196-81-37.compute-1.amazonaws.com'"
 
 
     - name: Verify Master Status
