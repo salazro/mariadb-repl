@@ -2,7 +2,7 @@ import os
 import re
 
 global datas
-datas=['[master1]']
+datas=[]
 with open('/mnt/c/Users/rdsal/git_projects/mariadb-repl/hosts','r') as fin:
   n_lines=0
   for line in fin:
@@ -17,7 +17,7 @@ with open('/mnt/c/Users/rdsal/git_projects/mariadb-repl/hosts','r') as fin:
         datas.append(line.strip())
         break
     
-
+os.system("echo [master1] > /mnt/c/Users/rdsal/git_projects/mariadb-repl/hosts")
 for data in datas:
   #print(data)
   os.system("echo " + data + " >> /mnt/c/Users/rdsal/git_projects/mariadb-repl/hosts")
