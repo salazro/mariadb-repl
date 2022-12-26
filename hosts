@@ -1,1 +1,6 @@
-
+[master1]
+ec2-54-91-112-111.compute-1.amazonaws.com
+[master2]
+ec2-44-201-126-150.compute-1.amazonaws.com
+[slave]
+ec2-18-234-143-243.compute-1.amazonaws.com

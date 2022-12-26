@@ -108,7 +108,7 @@
 
     - name: Fetching Binary Log Filename Data From Control Node
       copy: src=buffer/binlog_name_master1.txt dest=/home/ec2-user
-      when: "inventory_hostname == 'ec2-34-238-233-183.compute-1.amazonaws.com'"
+      when: "inventory_hostname == 'ec2-18-234-143-243.compute-1.amazonaws.com'"
 
 
     - name: Retrieved Binary Log Filename Data
@@ -122,7 +122,7 @@
 
     - name: Fetching Binary Log Position Data From Control Node
       copy: src=buffer/binlog_position_master1.txt dest=/home/ec2-user
-      when: "inventory_hostname == 'ec2-34-238-233-183.compute-1.amazonaws.com'"
+      when: "inventory_hostname == 'ec2-18-234-143-243.compute-1.amazonaws.com'"
 
 
     - name: Retrieved Binary Log Position Data
@@ -137,7 +137,7 @@
     - name: Fetching MasterNode IPv4 Address From Control Node
       run_once: yes
       copy: src=buffer/ipv4_master1.txt dest=/home/ec2-user
-      when: "inventory_hostname == 'ec2-34-238-233-183.compute-1.amazonaws.com'"
+      when: "inventory_hostname == 'ec2-18-234-143-243.compute-1.amazonaws.com'"
 
 
     - name: Retrieved MasterNode IPv4 Address
@@ -151,7 +151,7 @@
     
     - name: Fetching Binary Log Filename Data From Control Node
       copy: src=buffer/binlog_name_master2.txt dest=/home/ec2-user
-      when: "inventory_hostname == 'ec2-34-238-233-183.compute-1.amazonaws.com'"
+      when: "inventory_hostname == 'ec2-18-234-143-243.compute-1.amazonaws.com'"
 
 
     - name: Retrieved Binary Log Filename Data
@@ -165,7 +165,7 @@
 
     - name: Fetching Binary Log Position Data From Control Node
       copy: src=buffer/binlog_position_master2.txt dest=/home/ec2-user
-      when: "inventory_hostname == 'ec2-34-238-233-183.compute-1.amazonaws.com'"
+      when: "inventory_hostname == 'ec2-18-234-143-243.compute-1.amazonaws.com'"
 
 
     - name: Retrieved Binary Log Position Data
@@ -180,7 +180,7 @@
     - name: Fetching MasterNode IPv4 Address From Control Node
       run_once: yes
       copy: src=buffer/ipv4_master2.txt dest=/home/ec2-user
-      when: "inventory_hostname == 'ec2-34-238-233-183.compute-1.amazonaws.com'"
+      when: "inventory_hostname == 'ec2-18-234-143-243.compute-1.amazonaws.com'"
 
 
     - name: Retrieved MasterNode IPv4 Address
