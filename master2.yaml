@@ -1,0 +1,263 @@
+---
+- name: Setup Master2 MariaDB server, Enable Binary Log and Gather Data to setup replication for use by the Slave
+  hosts: mariadbserver01
+  become: yes
+  become_method: sudo
+  remote_user: ubuntu
+  tasks:
+    - name: Get latest Linux package updates
+      ansible.builtin.apt:
+        update_cache: yes
+
+
+    - name: Install Mariadb and python3-pip
+      ansible.builtin.apt:
+        pkg:
+        - mariadb-server
+        - python3-pip
+        state: present
+
+
+    - name: Install PyMySQL
+      ansible.builtin.pip:
+        name: PyMySQL
+        state: present
+
+
+    - name: Start service mariadb, if not started
+      ansible.builtin.service:
+        name: mariadb
+        state: started
+
+
+    - name: Enable service mariadb, and not touch the state
+      ansible.builtin.service:
+        name: mariadb
+        enabled: yes
+
+
+    - name: Secure mariadb installation
+      expect:
+        command: mysql_secure_installation
+        responses:
+          'Enter current password for root \(enter for none\):': "\n"
+          'Switch to unix_socket authentication \[Y/n\]': n
+          'Change the root password\? \[Y/n\]': "y"
+          'New password:': "{{mysql_pass}}"
+          'Re-enter new password:': "{{mysql_pass}}"
+          'Remove anonymous users\? \[Y/n\]': "y"
+          'Disallow root login remotely\? \[Y/n\]': "n"
+          'Remove test database and access to it\? \[Y/n\]': "y"
+          'Reload privilege tables now\? \[Y/n\]': "y"
+        echo: yes
+
+
+    - name: Change the bind-address from localhost to 0.0.0.0 on /etc/mysql/mariadb.conf.d/50-server.cnf
+      replace:
+        path: "/etc/mysql/mariadb.conf.d/50-server.cnf"
+        regexp: "127.0.0.1"
+        replace: "0.0.0.0"
+        backup: yes
+
+
+    - name: Configure binlog @ /etc/mysql/mariadb.conf.d/50-server.cnf
+      ansible.builtin.lineinfile:
+        path: /etc/mysql/mariadb.conf.d/50-server.cnf
+        state: present
+        line: "{{ item }}"
+      with_items:
+        - 'server-id = 1'
+        - 'log_bin = /var/log/mysql/mysql-bin.log'
+        - 'max_binlog_size = 100M'
+        - 'relay_log = /var/log/mysql/mysql-relay-bin'
+        - 'relay_log_index = /var/log/mysql/mysql-relay-bin.index'
+
+
+    - name: Restart service mariadb, if not started
+      ansible.builtin.service:
+        name: mariadb
+        state: restarted
+
+
+    - name: Verify mariadb application is listening on TCP port 3306
+      shell: ss -l -n -p | egrep "Netid|:3306"
+      register: mysql
+    - debug:
+        var: mysql.stdout_lines
+
+
+    - name: Create Replication User and Permission on Master Node
+      community.mysql.mysql_user:
+        login_user: "root"
+        login_password: "{{mysql_pass}}"
+        name: replication
+        host: "%"
+        password: securepassword
+        priv: "*.*:REPLICATION SLAVE"
+        state: present
+
+    - name: Verify Master Status
+      command: mysql -e "SHOW MASTER STATUS"
+      register: binpos
+    - set_fact:
+          bn: "{{binpos.stdout_lines[1] | regex_search('^mysql-bin.\\d+')}}"
+
+
+    - name: Getting Binary Log Filename
+      shell: echo {{bn}} > binlog_name_master2.txt
+
+
+    - name: Saving  Binary Log Filename
+      command: cat binlog_name_master2.txt
+      register: BinaryLogFileName
+    - debug:
+        var: BinaryLogFileName.stdout
+
+
+    - name: Sending Filename Information To Control Node For Later Use in Slave Configuration
+      run_once: yes
+      fetch: src=/home/ubuntu/binlog_name_master2.txt dest=buffer/ flat=yes
+      when: "inventory_hostname == 'ec2-52-23-210-117.compute-1.amazonaws.com'"
+
+    - set_fact:
+          bp: "{{binpos.stdout_lines | regex_search('\\\\t\\d+')}}"
+
+    - set_fact:
+          bp1: "{{bp | regex_search('\\d+')}}"
+
+
+    - name: Getting Binary Log Filename and Position
+      shell: echo {{bp1}} > binlog_position_master2.txt
+
+
+    - name: Saving  Binary Log Filename and Position
+      command: cat binlog_position_master2.txt
+      register: BinaryLogPosition
+    - debug:
+        var: BinaryLogPosition.stdout
+
+
+    - name: Sending Position Information To Control Node For Later Use in Slave Configuration
+      run_once: yes
+      fetch: src=/home/ubuntu/binlog_position_master2.txt dest=buffer/ flat=yes
+      when: "inventory_hostname == 'ec2-52-23-210-117.compute-1.amazonaws.com'"
+
+
+    - name: Running "ip addr"
+      shell: ip add | grep eth0
+      register: interface
+    - set_fact:
+        ip1: "{{interface.stdout_lines | regex_search('([0-9]{1,3}[\\.]){3}[0-9]{1,3}')}}"
+
+
+    - name: Getting Master Host IPv4 Address
+      shell: echo {{ip1}} > ipv4_master2.txt
+
+
+    - name: Saving Master Host IPv4 Address
+      command: cat ipv4_master2.txt
+      register: MasterNodeIPV4
+    - debug:
+        var: MasterNodeIPV4.stdout
+
+
+    - name: Sending Master Node Host IPv4 Address To Control Node For Later Use in Slave Configuration
+      run_once: yes
+      fetch: src=/home/ubuntu/ipv4_master2.txt dest=buffer/ flat=yes
+      when: "inventory_hostname == 'ec2-52-23-210-117.compute-1.amazonaws.com'"
+
+
+    - name: Verify Master Status
+      shell: mysql -te "SHOW MASTER STATUS"
+      register: status
+    - debug:
+        var: status.stdout_lines
+
+
+    - name: Show databases
+      shell: mysql -te "SHOW DATABASES"
+      register: db
+    - debug:
+        var: db.stdout_lines
+
+
+    - name: Download latest version of node-exporter
+      ansible.builtin.get_url:
+        url: https://github.com/prometheus/node_exporter/releases/download/v1.5.0/node_exporter-1.5.0.linux-amd64.tar.gz
+        dest: /home/ubuntu
+        
+    
+    - name: Extract node_exporter-1.5.0.linux-amd64.tar.gz
+      ansible.builtin.unarchive:
+        src: /home/ubuntu/node_exporter-1.5.0.linux-amd64.tar.gz
+        dest: /home/ubuntu
+        remote_src: yes
+
+
+    - name: Copy file "node_exporter-1.5.0.linux-amd64" to /usr/local/bin
+      ansible.builtin.copy:
+        src: /home/ubuntu/node_exporter-1.5.0.linux-amd64/node_exporter
+        dest: /usr/local/bin
+        mode: '755'
+        remote_src: yes
+
+    
+    - name: Rremove "node_exporter-1.5.0.linux-amd64" directory
+      ansible.builtin.file:
+        path: ./node_exporter-1.5.0.linux-amd64
+        state: absent
+    
+
+    - name: Add the user "node-exporter"
+      ansible.builtin.user:
+        name: node_exporter
+        shell: /bin/false
+        create_home: false
+
+
+    - name: Change ownership node_exporter file
+      ansible.builtin.file:
+        path: /usr/local/bin/node_exporter
+        state: file
+        owner: node_exporter
+        group: node_exporter   
+
+
+    - name: Copy systemd Unit file for node-exporter service
+      copy:
+        src: "/mnt/c/Users/rdsal/git_projects/monitoring/node_exporter.service"
+        dest: "/etc/systemd/system/node_exporter.service"
+
+   
+    - name: Reload Daemon
+      ansible.builtin.systemd:
+        daemon_reload: yes
+
+ 
+    - name: ReStart node_exporter service
+      ansible.builtin.service:
+        name: node_exporter
+        state: restarted
+
+
+    - name: Enable service node_exporter
+      ansible.builtin.service:
+        name: node_exporter
+        enabled: yes
+
+
+    - name: Verify node-exporter Service Status
+      command: systemctl status node_exporter
+      register: status
+    - debug:
+        var: status.stdout_lines
+
+
+    - name: Install "stress-ng" for Stress Tests
+      command: snap install stress-ng
+
+
+    - name: ReStart "snapd" service
+      ansible.builtin.service:
+        name: snapd
+        state: restarted

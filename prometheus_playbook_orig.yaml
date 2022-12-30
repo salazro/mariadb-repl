@@ -1,0 +1,183 @@
+---
+- name: Setup Prometheus and Node Exporter for Grafana
+  hosts: prometheus
+  become: yes
+  become_method: sudo
+  remote_user: ubuntu
+  vars:
+        ansible_python_interpreter: /usr/bin/python3
+  tasks:
+    - name: Get latest Linux package updates
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Create /etc/prometheus
+      command: sudo mkdir -p /etc/prometheus 
+
+    - name: Create /var/lib/prometheus
+      command: sudo mkdir -p /var/lib/prometheus 
+
+    - name: Download latest version of prometheus
+      command: wget https://github.com/prometheus/prometheus/releases/download/v2.41.0/prometheus-2.41.0.linux-amd64.tar.gz
+
+    - name: Download latest version of node-exporter
+      ansible.builtin.get_url:
+        url: https://github.com/prometheus/node_exporter/releases/download/v1.5.0/node_exporter-1.5.0.linux-amd64.tar.gz
+        dest: /home/ubuntu
+
+    - name: Untar file
+      command: tar -xvf prometheus-2.41.0.linux-amd64.tar.gz
+
+    - name: Move prometheus binary to /etc/local/bin
+      command: sudo cp /home/ubuntu/prometheus-2.41.0.linux-amd64/prometheus /home/ubuntu/prometheus-2.41.0.linux-amd64/prometheus /usr/local/bin
+
+    - name: Move promtool binary to /etc/local/bin
+      command: sudo cp /home/ubuntu/prometheus-2.41.0.linux-amd64/prometheus /home/ubuntu/prometheus-2.41.0.linux-amd64/promtool /usr/local/bin
+    
+    - name: Move console  to /etc/prometheus
+      command: sudo mv /home/ubuntu/prometheus-2.41.0.linux-amd64/consoles/ /etc/prometheus/
+
+    - name: Move console_libraries to /etc/prometheus
+      command: sudo mv /home/ubuntu/prometheus-2.41.0.linux-amd64/console_libraries/ /etc/prometheus/
+
+    - name: Move prometheus.yml binary to /etc/prometheus
+      command: sudo mv /home/ubuntu/prometheus-2.41.0.linux-amd64/prometheus.yml /etc/prometheus/prometheus.yml
+
+    - name: Verify Prometheus
+      command: prometheus --version
+      register: prometheus
+    - debug:
+        var: prometheus.stdout_lines
+
+    - name: Verify Promtool
+      command: promtool --version
+      register: promtool
+    - debug:
+        var: promtool.stdout_lines
+
+    - name: Add group prometheus
+      command: sudo groupadd --system prometheus
+
+    - name: Add user prometheus
+      command: sudo useradd -s /sbin/nologin --system -g prometheus prometheus
+
+    - name: chown
+      command: sudo chown -R prometheus:prometheus /etc/prometheus/
+
+    - name: chown
+      command: sudo chown -R prometheus:prometheus /var/lib/prometheus/
+
+    - name: chmod
+      command: sudo chmod -R 775 /etc/prometheus/
+
+    - name: chmod
+      command: sudo chmod -R 775 /var/lib/prometheus/
+
+    - name: Copy systemd Unit file for prometheus service
+      copy:
+        src: "/mnt/c/Users/rdsal/git_projects/monitoring/prometheus.service"
+        dest: "/etc/systemd/system/prometheus.service"
+
+    - name: Update promestheus.yml file with node IPs
+      copy:
+        src: "/mnt/c/Users/rdsal/git_projects/monitoring/prometheus.yml"
+        dest: "/etc/prometheus/prometheus.yml"
+
+    - name: Start Prometheus Service
+      command: sudo systemctl start prometheus
+
+    - name: Enable Prometheus Service
+      command: sudo systemctl enable prometheus 
+
+    - name: Verify Prometheus Service Status
+      command: sudo systemctl status prometheus
+      register: status
+    - debug:
+        var: status.stdout_lines
+
+    - name: Download latest version of node-exporter
+      ansible.builtin.get_url:
+        url: https://github.com/prometheus/node_exporter/releases/download/v1.5.0/node_exporter-1.5.0.linux-amd64.tar.gz
+        dest: /home/ubuntu
+        
+    
+    - name: Extract node_exporter-1.5.0.linux-amd64.tar.gz
+      ansible.builtin.unarchive:
+        src: /home/ubuntu/node_exporter-1.5.0.linux-amd64.tar.gz
+        dest: /home/ubuntu
+        remote_src: yes
+
+
+    - name: Copy file "node_exporter-1.5.0.linux-amd64" to /usr/local/bin
+      ansible.builtin.copy:
+        src: /home/ubuntu/node_exporter-1.5.0.linux-amd64/node_exporter
+        dest: /usr/local/bin
+        mode: '755'
+        remote_src: yes
+
+    
+    - name: Rremove "node_exporter-1.5.0.linux-amd64" directory
+      ansible.builtin.file:
+        path: ./node_exporter-1.5.0.linux-amd64
+        state: absent
+    
+
+    - name: Add the user "node-exporter"
+      ansible.builtin.user:
+        name: node_exporter
+        shell: /bin/false
+        create_home: false
+
+
+    - name: Change ownership node_exporter file
+      ansible.builtin.file:
+        path: /usr/local/bin/node_exporter
+        state: file
+        owner: node_exporter
+        group: node_exporter   
+
+
+    - name: Copy systemd Unit file for node-exporter service
+      copy:
+        src: "/mnt/c/Users/rdsal/git_projects/monitoring/node_exporter.service"
+        dest: "/etc/systemd/system/node_exporter.service"
+
+   
+    - name: Reload Daemon
+      ansible.builtin.systemd:
+        daemon_reload: yes
+
+ 
+    - name: ReStart node_exporter service
+      ansible.builtin.service:
+        name: node_exporter
+        state: restarted
+
+
+    - name: Enable service node_exporter
+      ansible.builtin.service:
+        name: node_exporter
+        enabled: yes
+
+
+    - name: Verify node-exporter Service Status
+      command: systemctl status node_exporter
+      register: status
+    - debug:
+        var: status.stdout_lines
+
+
+    - name: Install "stress-ng" for Stress Tests
+      command: snap install stress-ng
+
+
+    - name: ReStart "snapd" service
+      ansible.builtin.service:
+        name: snapd
+        state: restarted
+
+   
+
+  
+    
+      

@@ -1,0 +1,138 @@
+---
+- name: Setup Grafana
+  hosts: grafana
+  become: yes
+  become_method: sudo
+  remote_user: ubuntu
+  tasks:
+    - name: Get latest Linux package updates
+      ansible.builtin.apt:
+        update_cache: yes
+
+
+    - name: Add Grafana APT repository
+      command: apt install -y gnupg2 curl software-properties-common
+
+
+    - name: Add Grafana GPG Key
+      shell: curl -fsSL https://packages.grafana.com/gpg.key|sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/grafana.gpg
+
+
+    - name: Install Repository
+      expect:
+        command: add-apt-repository "deb https://packages.grafana.com/oss/deb stable main"
+        responses:
+          'Press \[ENTER\] to continue or Ctrl-c to cancel.': "\n"
+        echo: yes
+
+  
+    - name: Get latest Linux package updates
+      ansible.builtin.apt:
+        update_cache: yes
+
+
+    - name: Install Grafana
+      ansible.builtin.apt:
+        name: grafana
+        state: present
+
+ 
+    - name: Start grafana-server service
+      ansible.builtin.service:
+        name: grafana-server
+        state: restarted
+
+
+    - name: Enable service grafana-server
+      ansible.builtin.service:
+        name: grafana-server
+        enabled: yes
+
+
+    - name: Verify Prometheus Service Status
+      command: sudo systemctl status grafana-server
+      register: status
+    - debug:
+        var: status.stdout_lines
+
+ 
+    - name: Download latest version of node-exporter
+      ansible.builtin.get_url:
+        url: https://github.com/prometheus/node_exporter/releases/download/v1.5.0/node_exporter-1.5.0.linux-amd64.tar.gz
+        dest: /home/ubuntu
+        
+    
+    - name: Extract node_exporter-1.5.0.linux-amd64.tar.gz
+      ansible.builtin.unarchive:
+        src: /home/ubuntu/node_exporter-1.5.0.linux-amd64.tar.gz
+        dest: /home/ubuntu
+        remote_src: yes
+
+
+    - name: Copy file "node_exporter-1.5.0.linux-amd64" to /usr/local/bin
+      ansible.builtin.copy:
+        src: /home/ubuntu/node_exporter-1.5.0.linux-amd64/node_exporter
+        dest: /usr/local/bin
+        mode: '755'
+        remote_src: yes
+
+    
+    - name: Rremove "node_exporter-1.5.0.linux-amd64" directory
+      ansible.builtin.file:
+        path: ./node_exporter-1.5.0.linux-amd64
+        state: absent
+    
+
+    - name: Add the user "node-exporter"
+      ansible.builtin.user:
+        name: node_exporter
+        shell: /bin/false
+        create_home: false
+
+
+    - name: Change ownership node_exporter file
+      ansible.builtin.file:
+        path: /usr/local/bin/node_exporter
+        state: file
+        owner: node_exporter
+        group: node_exporter   
+
+
+    - name: Copy systemd Unit file for node-exporter service
+      copy:
+        src: "/mnt/c/Users/rdsal/git_projects/monitoring/node_exporter.service"
+        dest: "/etc/systemd/system/node_exporter.service"
+
+   
+    - name: Reload Daemon
+      ansible.builtin.systemd:
+        daemon_reload: yes
+
+ 
+    - name: ReStart node_exporter service
+      ansible.builtin.service:
+        name: node_exporter
+        state: restarted
+
+
+    - name: Enable service node_exporter
+      ansible.builtin.service:
+        name: node_exporter
+        enabled: yes
+
+
+    - name: Verify node-exporter Service Status
+      command: systemctl status node_exporter
+      register: status
+    - debug:
+        var: status.stdout_lines
+
+
+    - name: Install "stress-ng" for Stress Tests
+      command: snap install stress-ng
+
+
+    - name: ReStart "snapd" service
+      ansible.builtin.service:
+        name: snapd
+        state: restarted
