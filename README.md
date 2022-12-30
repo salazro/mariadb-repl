@@ -1,7 +1,5 @@
 ######################################################
-
 MariaDB Multi Master DB replication to a Slave Server
-
 ######################################################
 
 - This project setup a mariadb multi master replication to a single slave node, using AWS and RHEL9 Linux OS.
